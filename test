@@ -1,0 +1,119 @@
+#!/usr/bin/env perl6
+use Test;
+use lib $?FILE.IO.dirname;
+use C101;
+
+plan 12;
+
+
+my $sample = Company.new(
+    name     => 'ACME Corporation',
+    children => (
+        Department.new(
+            name     => 'Research',
+            children => (
+                Employee.new(
+                    name    => 'Craig',
+                    address => 'Redmond',
+                    salary  => 123456,
+                ),
+                Employee.new(
+                    name    => 'Erik',
+                    address => 'Utrecht',
+                    salary  => 12345,
+                ),
+                Employee.new(
+                    name    => 'Ralf',
+                    address => 'Koblenz',
+                    salary  => 1234,
+                ),
+            ),
+        ),
+        Department.new(
+            name     => 'Development',
+            children => [
+                Employee.new(
+                    name    => 'Ray',
+                    address => 'Redmond',
+                    salary  => 234567,
+                ),
+                Department.new(
+                    name     => 'Dev1',
+                    children => [
+                        Employee.new(
+                            name    => 'Klaus',
+                            address => 'Boston',
+                            salary  => 23456,
+                        ),
+                        Department.new(
+                            name     => 'Dev1.1',
+                            children => [
+                                Employee.new(
+                                    name    => 'Karl',
+                                    address => 'Riga',
+                                    salary  => 2345,
+                                ),
+                                Employee.new(
+                                    name    => 'Joe',
+                                    address => 'Wifi City',
+                                    salary  => 2344,
+                                ),
+                            ],
+                        )
+                    ],
+                ),
+            ],
+        ),
+    ),
+);
+
+say $sample;
+
+
+is $sample.unparse, q:to/HERE/.trim, 'unparse';
+    Company "ACME Corporation" (
+        Department Research (
+            Employee Craig Redmond 123456
+            Employee Erik Utrecht 12345
+            Employee Ralf Koblenz 1234
+        )
+        Department Development (
+            Employee Ray Redmond 234567
+            Department Dev1 (
+                Employee Klaus Boston 23456
+                Department Dev1.1 (
+                    Employee Karl Riga 2345
+                    Employee Joe "Wifi City" 2344
+                )
+            )
+        )
+    )
+    HERE
+
+
+is-deeply C101::parse($sample.unparse), $sample, 'parse company';
+
+is-deeply C101::parse('Department "Some Dept" ()'),
+          Department.new(:name('Some Dept')),
+          'parse department';
+
+is-deeply C101::parse('Employee Johnny "New York" 1234'),
+          Employee.new(:name('Johnny'), :address('New York'), :salary(1234)),
+          'parse employee';
+
+dies-ok { C101::parse('Employee Johnny New York 1234') },
+        'parse invalid structure fails';
+
+
+is-deeply C101::deserialize($sample.serialize), $sample, 'serialization';
+
+
+cmp-ok $sample.count,  '==', 7,          'count';
+cmp-ok $sample.total,  '==', 399747,     'total';
+cmp-ok $sample.median, '==', 399747 / 7, 'median';
+
+
+$sample.cut;
+cmp-ok $sample.count,  '==', 7,            'count after cut';
+cmp-ok $sample.total,  '==', 199873.5,     'total after cut';
+cmp-ok $sample.median, '==', 199873.5 / 7, 'median after cut';
