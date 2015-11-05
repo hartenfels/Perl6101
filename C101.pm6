@@ -29,7 +29,7 @@ class Unit
 class Subunit is Unit {}
 
 
-sub qu($text) { $text ~~ /\s/ ?? qq/"$text"/ !! $text }
+sub qu($text) { $text ~~ /\s/ ?? "\"$text\""/ !! $text }
 
 role Parent
 {
